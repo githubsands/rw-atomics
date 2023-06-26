@@ -63,7 +63,6 @@ impl runner {
     fn traverse(&mut self) {
         // wait for depth process to release reader_thread
         loop {
-            thread::sleep(time::Duration::from_secs(3));
             while self.reader_thread.load(Ordering::Relaxed) {
                 self.reader_thread.store(false, Ordering::SeqCst);
                 let _ = thread::scope(|s| {
@@ -77,15 +76,6 @@ impl runner {
                 break;
             }
         }
-    }
-
-    fn unreader_thread(&mut self) {
-        let reader_thread = self.reader_thread.clone();
-        let t1 = thread::spawn(move || loop {
-            thread::sleep(time::Duration::from_secs(5));
-            _ = reader_thread.load(Ordering::SeqCst);
-        });
-        t1.join();
     }
 }
 
@@ -141,11 +131,6 @@ impl side {
     fn traverse_bids(&mut self) {
         println!("3 2 READER THREAD traversing bids");
         thread::sleep(time::Duration::from_millis(1));
-        /*
-        while let Some(val) = self.side.get_mut().into_iter().next() {
-            println!("{:#?}")
-        }
-        */
     }
 
     fn traverse_asks(&mut self) {
@@ -159,7 +144,6 @@ fn main() {
     let mut reader_runner = runner.clone();
 
     let sender = thread::spawn(move || loop {
-        // thread::sleep(time::Duration::from_millis(3));
         producer.send(8);
     });
 
